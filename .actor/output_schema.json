@@ -1,0 +1,74 @@
+{
+  "title": "BuySearchSell Listing Output",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "title": {
+      "title": "Title",
+      "type": "string",
+      "description": "Listing title",
+      "editor": "textfield"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string",
+      "description": "Full description of the listing",
+      "editor": "textarea"
+    },
+    "url": {
+      "title": "URL",
+      "type": "string",
+      "description": "Full URL to the listing page",
+      "editor": "textfield"
+    },
+    "category": {
+      "title": "Category",
+      "type": "string",
+      "description": "Main category",
+      "editor": "textfield"
+    },
+    "subcategory": {
+      "title": "Subcategory",
+      "type": "string",
+      "description": "Subcategory",
+      "editor": "textfield"
+    },
+    "location": {
+      "title": "Location",
+      "type": "string",
+      "description": "Geographic location",
+      "editor": "textfield"
+    },
+    "price": {
+      "title": "Price",
+      "type": "string",
+      "description": "Listed price",
+      "editor": "textfield"
+    },
+    "phone": {
+      "title": "Phone",
+      "type": "string",
+      "description": "Contact phone number",
+      "editor": "textfield"
+    },
+    "email": {
+      "title": "Email",
+      "type": "string",
+      "description": "Contact email",
+      "editor": "textfield"
+    },
+    "image": {
+      "title": "Image URL",
+      "type": "string",
+      "description": "Main image URL",
+      "editor": "textfield"
+    },
+    "scrapedAt": {
+      "title": "Scraped At",
+      "type": "string",
+      "description": "ISO timestamp when scraped",
+      "editor": "textfield"
+    }
+  },
+  "required": ["title", "url"]
+}

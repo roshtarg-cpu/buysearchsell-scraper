@@ -4,7 +4,7 @@ BuySearchSell.com.au Scraper - Extract classified ads from BuySearchSell Austral
 
 from apify import Actor
 from playwright.async_api import async_playwright
-import re
+from datetime import datetime
 
 async def main():
     async with Actor:
@@ -13,65 +13,70 @@ async def main():
         max_results = actor_input.get('maxResults', 100)
         start_url = actor_input.get('startUrl', 'https://www.buysearchsell.com.au/all-locations/trades-services/')
         
-        Actor.log.info(f'Starting BuySearchSell scraper with max_results={max_results}')
-        Actor.log.info(f'Start URL: {start_url}')
+        Actor.log.info(f'Starting BuySearchSell scraper')
+        Actor.log.info(f'URL: {start_url}')
+        Actor.log.info(f'Max results: {max_results}')
         
         results = []
         
-        async with async_playwright() as playwright:
+        async with async_playwright() as p:
             # Launch browser
-            browser = await playwright.chromium.launch(headless=True)
+            browser = await p.chromium.launch(headless=True)
             context = await browser.new_context(
-                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 viewport={'width': 1920, 'height': 1080}
             )
             page = await context.new_page()
             
             try:
-                # Navigate to the category page
+                # Navigate to category page
                 Actor.log.info(f'Navigating to {start_url}')
                 await page.goto(start_url, wait_until='domcontentloaded', timeout=30000)
-                await page.wait_for_timeout(2000)  # Wait for dynamic content
+                await page.wait_for_timeout(3000)
                 
-                # Extract listings
+                # Extract listings from the page
+                Actor.log.info('Extracting listings...')
                 listings = await page.evaluate('''() => {
                     const items = [];
                     
                     // Find all listing containers
-                    const containers = document.querySelectorAll('.span2.item, .container-section-vertical-item');
+                    const containers = document.querySelectorAll('.span2.item, .item, div[data-overlay-marker]');
                     
                     containers.forEach(container => {
                         try {
-                            // Get link
-                            const link = container.querySelector('a[href*="/trades-services/"], a[href*="/buy-sell/"], a[href*="/notices/"], a[href*="/adult-services/"]');
-                            if (!link) return;
+                            // Get the main link
+                            const link = container.querySelector('a[href*="/trades-services/"], a[href*="/buy-sell/"], a[href*="/notices/"]');
+                            if (!link || !link.href) return;
+                            
+                            // Skip if not a listing URL (must have ID at end)
+                            if (!/\\/\\d+\\/?$/.test(link.href)) return;
                             
                             const url = link.href;
                             
-                            // Extract ID from URL (last number before trailing slash)
-                            const idMatch = url.match(/\\/([0-9]+)\\/?$/);
+                            // Extract ID
+                            const idMatch = url.match(/\\/(\\d+)\\/?$/);
                             const id = idMatch ? idMatch[1] : null;
                             
                             // Get title
-                            const titleEl = container.querySelector('h3 a, h2 a, .item-details a');
+                            const titleEl = container.querySelector('h3, h2, h4');
                             const title = titleEl ? titleEl.textContent.trim() : null;
                             
                             // Get image
                             const imgEl = container.querySelector('img');
                             const image = imgEl ? imgEl.src : null;
                             
-                            // Get category from URL
-                            const categoryMatch = url.match(/\\/([^\\/]+)\\/([^\\/]+)\\/[^\\/]+\\/[0-9]+/);
-                            const category = categoryMatch ? categoryMatch[1].replace(/-/g, ' ') : null;
-                            const subcategory = categoryMatch ? categoryMatch[2].replace(/-/g, ' ') : null;
+                            // Extract category from URL
+                            const parts = url.split('/').filter(p => p);
+                            const category = parts.length > 1 ? parts[parts.length - 4] : null;
+                            const subcategory = parts.length > 2 ? parts[parts.length - 3] : null;
                             
                             if (title && url && id) {
                                 items.push({
                                     id: id,
                                     title: title,
                                     url: url,
-                                    category: category,
-                                    subcategory: subcategory,
+                                    category: category ? category.replace(/-/g, ' ') : null,
+                                    subcategory: subcategory ? subcategory.replace(/-/g, ' ') : null,
                                     image: image
                                 });
                             }
@@ -83,24 +88,24 @@ async def main():
                     return items;
                 }''')
                 
-                Actor.log.info(f'Extracted {len(listings)} listings from category page')
+                Actor.log.info(f'Found {len(listings)} listings on page')
                 
-                # Process each listing (optionally visit detail pages)
-                for listing in listings[:max_results]:
+                # Process each listing
+                for idx, listing in enumerate(listings[:max_results]):
                     try:
-                        # Visit detail page to get more info
-                        Actor.log.info(f'Processing: {listing["title"]} ({listing["id"]})')
+                        Actor.log.info(f'Processing {idx+1}/{min(len(listings), max_results)}: {listing["title"]}')
                         
+                        # Visit detail page
                         detail_page = await context.new_page()
                         await detail_page.goto(listing['url'], wait_until='domcontentloaded', timeout=20000)
-                        await detail_page.wait_for_timeout(1000)
+                        await detail_page.wait_for_timeout(1500)
                         
-                        # Extract details
+                        # Extract details from the page
                         details = await detail_page.evaluate('''() => {
                             const data = {};
                             
-                            // Description
-                            const descEl = document.querySelector('.ad-description, .description, .content p');
+                            // Try to find description
+                            const descEl = document.querySelector('.ad-description, .description, .content, [class*="description"]');
                             data.description = descEl ? descEl.textContent.trim() : null;
                             
                             // Location
@@ -111,11 +116,12 @@ async def main():
                             const priceEl = document.querySelector('.price, [class*="price"]');
                             data.price = priceEl ? priceEl.textContent.trim() : null;
                             
-                            // Contact info
-                            const phoneEl = document.querySelector('[href^="tel:"], .phone');
+                            // Phone
+                            const phoneEl = document.querySelector('a[href^="tel:"], .phone, [class*="phone"]');
                             data.phone = phoneEl ? phoneEl.textContent.trim() : null;
                             
-                            const emailEl = document.querySelector('[href^="mailto:"], .email');
+                            // Email
+                            const emailEl = document.querySelector('a[href^="mailto:"], .email');
                             data.email = emailEl ? emailEl.textContent.trim() : null;
                             
                             return data;
@@ -123,8 +129,7 @@ async def main():
                         
                         await detail_page.close()
                         
-                        # Merge listing and details
-                        from datetime import datetime
+                        # Merge data
                         result = {
                             **listing,
                             **details,
@@ -135,20 +140,19 @@ async def main():
                         await Actor.push_data(result)
                         results.append(result)
                         
-                        Actor.log.info(f'Saved: {result["title"]}')
+                        Actor.log.info(f'✅ Saved: {result["title"]}')
                         
                         if len(results) >= max_results:
-                            Actor.log.info(f'Reached max_results limit: {max_results}')
                             break
                             
                     except Exception as e:
-                        Actor.log.error(f'Error processing listing {listing["id"]}: {e}')
+                        Actor.log.error(f'Error processing {listing.get("title", "unknown")}: {e}')
                         continue
                 
             except Exception as e:
-                Actor.log.error(f'Error during scraping: {e}')
+                Actor.log.error(f'Fatal error: {e}')
                 raise
             finally:
                 await browser.close()
         
-        Actor.log.info(f'Scraping completed. Total items: {len(results)}')
+        Actor.log.info(f'✅ Scraping completed. Total: {len(results)} items')

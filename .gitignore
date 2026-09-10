@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.apify/
+storage/
+apify_storage/
+.env
+.venv
+venv/
+*.log

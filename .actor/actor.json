@@ -1,0 +1,62 @@
+{
+  "actorSpecification": 1,
+  "name": "buysearchsell-scraper",
+  "title": "BuySearchSell Scraper",
+  "description": "Extract classified ads from BuySearchSell.com.au - Australia's leading classifieds marketplace. Scrape trades & services, buy & sell items, notices, and more.",
+  "version": "1.0",
+  "meta": {
+    "templateId": "python-playwright"
+  },
+  "input": "./input_schema.json",
+  "dockerfile": "./Dockerfile",
+  "storages": {
+    "dataset": {
+      "actorSpecification": 1,
+      "fields": {},
+      "views": {
+        "overview": {
+          "title": "Overview",
+          "transformation": {
+            "fields": [
+              "title",
+              "category",
+              "subcategory",
+              "location",
+              "price",
+              "url"
+            ]
+          },
+          "display": {
+            "component": "table",
+            "properties": {
+              "title": {
+                "label": "Title",
+                "format": "text"
+              },
+              "category": {
+                "label": "Category",
+                "format": "text"
+              },
+              "subcategory": {
+                "label": "Subcategory",
+                "format": "text"
+              },
+              "location": {
+                "label": "Location",
+                "format": "text"
+              },
+              "price": {
+                "label": "Price",
+                "format": "text"
+              },
+              "url": {
+                "label": "URL",
+                "format": "link"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

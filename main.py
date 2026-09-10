@@ -67,3 +67,7 @@ async def main():
                 await browser.close()
         
         Actor.log.info(f'Done. Scraped {count} items')
+
+if __name__ == '__main__':
+    import asyncio
+    asyncio.run(main())

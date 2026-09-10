@@ -1,75 +1,27 @@
 {
   "actorOutputSchemaVersion": 1,
-  "title": "BuySearchSell Listing Output",
+  "title": "BuySearchSell Listing",
   "type": "object",
-  "schemaVersion": 1,
   "properties": {
     "title": {
       "title": "Title",
       "type": "string",
-      "description": "Listing title",
-      "editor": "textfield"
-    },
-    "description": {
-      "title": "Description",
-      "type": "string",
-      "description": "Full description of the listing",
-      "editor": "textarea"
+      "template": "{#result.title}"
     },
     "url": {
       "title": "URL",
       "type": "string",
-      "description": "Full URL to the listing page",
-      "editor": "textfield"
+      "template": "{#result.url}"
     },
-    "category": {
-      "title": "Category",
+    "description": {
+      "title": "Description",
       "type": "string",
-      "description": "Main category",
-      "editor": "textfield"
-    },
-    "subcategory": {
-      "title": "Subcategory",
-      "type": "string",
-      "description": "Subcategory",
-      "editor": "textfield"
-    },
-    "location": {
-      "title": "Location",
-      "type": "string",
-      "description": "Geographic location",
-      "editor": "textfield"
-    },
-    "price": {
-      "title": "Price",
-      "type": "string",
-      "description": "Listed price",
-      "editor": "textfield"
-    },
-    "phone": {
-      "title": "Phone",
-      "type": "string",
-      "description": "Contact phone number",
-      "editor": "textfield"
-    },
-    "email": {
-      "title": "Email",
-      "type": "string",
-      "description": "Contact email",
-      "editor": "textfield"
-    },
-    "image": {
-      "title": "Image URL",
-      "type": "string",
-      "description": "Main image URL",
-      "editor": "textfield"
+      "template": "{#result.description}"
     },
     "scrapedAt": {
       "title": "Scraped At",
       "type": "string",
-      "description": "ISO timestamp when scraped",
-      "editor": "textfield"
+      "template": "{#result.scrapedAt}"
     }
-  },
-  "required": ["title", "url"]
+  }
 }
